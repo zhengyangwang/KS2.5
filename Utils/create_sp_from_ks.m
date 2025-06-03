@@ -14,7 +14,12 @@ for i = 1:numel(ks_output_dirs)
     if isempty(current_session_name)
         continue
     end
-    current_output_name = [current_session_name{1}, '_sp.mat'];
+    current_probe_name   = regexp(ks_output_dirs(i).folder, '(probe_)\d', 'match');
+    if isempty(current_probe_name)
+        current_output_name = [current_session_name{1}, '_sp.mat'];
+    else
+        current_output_name = [current_session_name{1}, '_', current_probe_name{1}, '_sp.mat'];
+    end
     fprintf('Formatting Kilosort files into: %s\n', current_output_name);
     current_output_fullpath = fullfile(sp_output_dir, current_output_name);
     if isfile(current_output_fullpath)
@@ -27,7 +32,7 @@ for i = 1:numel(ks_output_dirs)
     if ~isempty(sp.cids)
         sp = zw_merge_clusters(sp);
         if do_assign_session_probe_info
-            sp = assign_session_probe_info(sp, session_table, probe_table);
+            sp = assign_session_probe_info(sp, session_table, probe_table, 'probe_name', current_probe_name);
         end
     end
     save(current_output_fullpath, "sp");

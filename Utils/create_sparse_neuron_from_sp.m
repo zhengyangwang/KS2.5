@@ -25,15 +25,16 @@ addpath(genpath('External')) % path to external functions
 %%
 for i_session = 1:numel(sessions)
     session     = sessions(i_session);
+    sp_filename = sprintf('%s%03.f*_sp.mat', session.subject_identifier, session.session_number);
+    sp_dir      = dir(fullfile(sp_directory, sp_filename));
+    if isempty(sp_dir)
+        continue
+    end
     %  Load OE data not used by Kilosort
     oe          = loadOE(session);
     %  Load spikes
-    sp_filename = sprintf('%s%03.f_sp.mat', session.subject_identifier, session.session_number);
-    sp_dir      = fullfile(sp_directory, sp_filename);
-    if ~isfile(sp_dir)
-        continue
-    end
-    load(sp_dir, 'sp');
+    for i_sp_dir = 1:numel(sp_dir)
+    load(fullfile(sp_dir(i_sp_dir).folder, sp_dir(i_sp_dir).name), 'sp');
     if ~isempty(adc_input_directory)
         %  Load ADC events if available (those sampled on the same clock as the continuous data)
         adc_event_file_path = fullfile(adc_input_directory, ['*', session.subject_identifier, '*', num2str(session.session_number), '_adc_event*']);
@@ -60,7 +61,8 @@ for i_session = 1:numel(sessions)
             aux_loader = load(fullfile(aux_event_file.folder, aux_event_file.name), 'event_structure');
             aux_events = aux_loader.event_structure.analog_events;
         end
-        hp_rms_file_path    = fullfile(adc_input_directory, ['*', session.subject_identifier, '*', num2str(session.session_number), '*hp_RMS*']);
+        sp_token = regexp(sp_dir(i_sp_dir).name, '(.*?)_sp.mat', 'tokens');
+        hp_rms_file_path    = fullfile(adc_input_directory, ['*', sp_token{1}{1}, '*hp_RMS*']);
         hp_rms_file         = dir(hp_rms_file_path);
         if isempty(hp_rms_file)
             warning('No hig-pass RMS file found at %s\n', hp_rms_file_path)
@@ -129,6 +131,7 @@ for i_session = 1:numel(sessions)
             MatData = classify_single_unit(MatData);
             save(fname, 'MatData');
         end
+    end
     end
     toc
 end

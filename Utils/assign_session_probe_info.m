@@ -1,9 +1,24 @@
-function sp = assign_session_probe_info(sp, session_table, probe_table)
+function sp = assign_session_probe_info(sp, session_table, probe_table, varargin)
+p = inputParser;
+p.addParameter('probe_name', []);
+p.parse(varargin{:});
+probe_name = p.Results.probe_name;
+
 probe_record   = probe_table(ismember(probe_table.OE_Filename, sp.session_name), :);
 session_record = session_table(ismember(session_table.OE_Filename, sp.session_name), :);
 [~, probe_record_order] = sort(probe_record.Probe_order);
 probe_record = probe_record(probe_record_order, :);
-sp.probe_record = probe_record;
+
+if ~isempty(probe_name)
+    probe_num_string = regexp(probe_name, 'probe_(\d+)', 'once', 'tokens');
+    probe_idx = str2num(probe_num_string{1}{1});
+    sp_by_probe = true;
+else
+    probe_idx = 1:size(probe_record, 1);
+    sp_by_probe = false;
+end
+
+sp.probe_record = probe_record(probe_idx, :);
 sp.session_record = session_record;
 channel_count = 0;
 channel_area = {};
@@ -13,6 +28,9 @@ channel_LR = [];
 channel_depth_from_1st_spike = [];
 for i = 1:size(probe_record, 1)
     channel_count(i + 1) = get_channel_count(probe_record{i, 'Probe'});
+    if ~ismember(i, probe_idx)
+        continue
+    end
     probe_area = probe_record{i, 'Area'};
     probe_hemisphere = probe_record{i, 'Hemisphere'};
     if isempty(probe_area)
@@ -34,8 +52,13 @@ for i = 1:size(probe_record, 1)
     % Human records should always follow the same rule, except for 1)
     % the CHs are 1-indexed. 2) Deep channels have larger depth numbers
     % instead of smaller depth numbers as would kilosort channel maps.
-    current_probe_sp_idx = channel_count(i) + [1:channel_count(i + 1)];
-    spike_CH_sp_idx = find(sp.channel_map == (probe_record{i, 'Spike_CH'} - 1));
+    if sp_by_probe
+        current_probe_sp_idx = [1:channel_count(i + 1)];
+        spike_CH_sp_idx = find(sp.channel_map == (probe_record{i, 'Spike_CH'} - 1 - channel_count(i)));
+    else
+        current_probe_sp_idx = channel_count(i) + [1:channel_count(i + 1)];
+        spike_CH_sp_idx = find(sp.channel_map == (probe_record{i, 'Spike_CH'} - 1));
+    end
     if isempty(spike_CH_sp_idx)
         channel_depth_from_1st_spike = [channel_depth_from_1st_spike, nan(size(current_probe_sp_idx))];
     else

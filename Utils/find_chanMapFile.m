@@ -22,7 +22,8 @@ switch n_chan
     case num2cell(128 + [1:8])
         chanMapFile = sprintf('DA128-2_chanMap_%dadc.mat', n_chan - 128);
     case 256
-        chanMapFile = 'DA128-2X2_chanMap.mat';
+%         chanMapFile = 'DA128-2X2_chanMap.mat';
+        chanMapFile = {'DA128-2X2_1_chanMap.mat', 'DA128-2X2_2_chanMap.mat'};
     case mat2cell(256 + [1:8])
         chanMapFile = sprintf('DA128-2X2_chanMap_%dadc.mat', n_chan - 256);
 end

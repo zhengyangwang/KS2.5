@@ -86,7 +86,7 @@ f=java.io.File(jsonFile);
 if (~f.isAbsolute())
     f=java.io.File(fullfile(pwd,jsonFile));
 end
-start_timestamp = read_sync_message(dir(fullfile(char(f.getParentFile()), '*sync_message*')));
+% start_timestamp = read_sync_message(dir(fullfile(char(f.getParentFile()), '*sync_message*')));
 f=java.io.File(f.getParentFile(),fullfile(type, header.folder_name));
 if(~f.exists())
     error('Data folder not found');
@@ -115,7 +115,7 @@ switch type
              if ~isempty(start_timestamp)
                  D.Timestamps = start_timestamp + int64(0:(samples - 1))';
              elseif (D.Timestamps(end) - D.Timestamps(1) + 1) == int64(samples)
-                 D.Timestamps = D.Timestamps(1):D.Timestamps(end);
+                 D.Timestamps = [D.Timestamps(1):D.Timestamps(end)]';
              else
                  error('No correction found for imestamp corruption in: %s', jsonFile)
              end
